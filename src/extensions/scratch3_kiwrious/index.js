@@ -12,6 +12,7 @@ let isRunning = false;
 let isConnected = false;
 
 let isHumiditySensorEnabled = false;
+let isConductivitySensorEnabled = false;
 
 let port;
 let sensorData;
@@ -45,6 +46,14 @@ class Scratch3Kiwrious {
                 },
                 {
                     opcode: 'Temperature',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'Resistance (Ω)',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'Conductance (μS)',
                     blockType: BlockType.REPORTER
                 }
             ],
@@ -109,6 +118,21 @@ class Scratch3Kiwrious {
         return temperature / 100;
     }
 
+    'Resistance (Ω)' () {
+        if (!(sensorData && isConductivitySensorEnabled)) {
+            return 0;
+        }
+        return (sensorData[6] | (sensorData[7] << 8)) * (sensorData[8] | (sensorData[9] << 8));
+    }
+
+    'Conductance (μS)' () {
+        if (!(sensorData && isConductivitySensorEnabled)) {
+            return 0;
+        }
+        const conductivity = (1 / this['Resistance (Ω)']()) * 1000000;
+        return conductivity.toFixed(2);
+    }
+
     _read (reader) {
         const serialPacket = async function (resolve) {
             const {value, done} = await reader.read();
@@ -128,12 +152,16 @@ class Scratch3Kiwrious {
                 isConnected = false;
                 isRunning = false;
                 isHumiditySensorEnabled = false;
+                isConductivitySensorEnabled = false;
             });
         }
     }
 
     _setSensorTypeFlags (id) {
         switch (id) {
+        case 4:
+            isConductivitySensorEnabled = true;
+            break;
         case 7:
             isHumiditySensorEnabled = true;
             break;
