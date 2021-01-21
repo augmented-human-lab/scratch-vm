@@ -15,6 +15,7 @@ let isConnected = false;
 let isHumiditySensorEnabled = false;
 let isConductivitySensorEnabled = false;
 let isUvSensorEnabled = false;
+let isVocSensorEnabled = false;
 
 let port;
 let sensorData;
@@ -64,6 +65,14 @@ class Scratch3Kiwrious {
                 },
                 {
                     opcode: 'UV',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'tVOC (ppb)',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'CO2eq (ppm)',
                     blockType: BlockType.REPORTER
                 }
             ],
@@ -159,6 +168,20 @@ class Scratch3Kiwrious {
         return uv.getFloat32(10, true).toFixed(1);
     }
 
+    'tVOC (ppb)' () {
+        if (!(sensorData && isVocSensorEnabled)) {
+            return NOT_CONNECTED;
+        }
+        return sensorData[6] | (sensorData[7] << 8);
+    }
+
+    'CO2eq (ppm)' () {
+        if (!(sensorData && isVocSensorEnabled)) {
+            return NOT_CONNECTED;
+        }
+        return sensorData[8] | (sensorData[9] << 8);
+    }
+
     _read (reader) {
         const serialPacket = async function (resolve) {
             const {value, done} = await reader.read();
@@ -180,6 +203,7 @@ class Scratch3Kiwrious {
                 isHumiditySensorEnabled = false;
                 isConductivitySensorEnabled = false;
                 isUvSensorEnabled = false;
+                isVocSensorEnabled = false;
             });
         }
     }
@@ -191,6 +215,9 @@ class Scratch3Kiwrious {
             break;
         case 4:
             isConductivitySensorEnabled = true;
+            break;
+        case 6:
+            isVocSensorEnabled = true;
             break;
         case 7:
             isHumiditySensorEnabled = true;
