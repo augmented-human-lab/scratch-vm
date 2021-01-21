@@ -42,11 +42,11 @@ class Scratch3Kiwrious {
                     blockType: BlockType.COMMAND
                 },
                 {
-                    opcode: 'Humidity',
+                    opcode: 'Humidity (%)',
                     blockType: BlockType.REPORTER
                 },
                 {
-                    opcode: 'Temperature',
+                    opcode: 'Temperature (°C)',
                     blockType: BlockType.REPORTER
                 },
                 {
@@ -111,7 +111,7 @@ class Scratch3Kiwrious {
         await reader.cancel();
     }
 
-    Humidity () {
+    'Humidity (%)' () {
         if (!(sensorData && isHumiditySensorEnabled)) {
             return 0;
         }
@@ -119,7 +119,7 @@ class Scratch3Kiwrious {
         return humidity / 100;
     }
 
-    Temperature () {
+    'Temperature (°C)' () {
         if (!(sensorData && isHumiditySensorEnabled)) {
             return 0;
         }
