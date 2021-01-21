@@ -4,6 +4,7 @@ require('regenerator-runtime/runtime');
 const BlockType = require('../../extension-support/block-type');
 
 const KIWRIOUS_RX_LENGTH = 26;
+const NOT_CONNECTED = 'Not Connected';
 const filters = [
     {usbVendorId: 0x04d8, usbProductId: 0xec19}
 ];
@@ -113,7 +114,7 @@ class Scratch3Kiwrious {
 
     'Humidity (%)' () {
         if (!(sensorData && isHumiditySensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         const humidity = sensorData[8] | (sensorData[9] << 8);
         return humidity / 100;
@@ -121,7 +122,7 @@ class Scratch3Kiwrious {
 
     'Temperature (°C)' () {
         if (!(sensorData && isHumiditySensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         const temperature = sensorData[6] | (sensorData[7] << 8);
         return temperature / 100;
@@ -129,14 +130,14 @@ class Scratch3Kiwrious {
 
     'Resistance (Ω)' () {
         if (!(sensorData && isConductivitySensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         return (sensorData[6] | (sensorData[7] << 8)) * (sensorData[8] | (sensorData[9] << 8));
     }
 
     'Conductance (μS)' () {
         if (!(sensorData && isConductivitySensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         const conductivity = (1 / this['Resistance (Ω)']()) * 1000000;
         return conductivity.toFixed(2);
@@ -144,7 +145,7 @@ class Scratch3Kiwrious {
 
     Lux () {
         if (!(sensorData && isUvSensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         const lux = new DataView(sensorData.buffer);
         return lux.getFloat32(6, true).toFixed(0);
@@ -152,7 +153,7 @@ class Scratch3Kiwrious {
 
     UV () {
         if (!(sensorData && isUvSensorEnabled)) {
-            return 0;
+            return NOT_CONNECTED;
         }
         const uv = new DataView(sensorData.buffer);
         return uv.getFloat32(10, true).toFixed(1);
