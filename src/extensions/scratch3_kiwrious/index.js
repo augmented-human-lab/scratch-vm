@@ -158,7 +158,11 @@ class Scratch3Kiwrious {
         if (!(sensorData && isConductivitySensorEnabled)) {
             return NOT_CONNECTED;
         }
-        const conductivity = (1 / this['Resistance (Ω)']()) * 1000000;
+        const resistance = this['Resistance (Ω)']();
+        if (resistance === 0) {
+            return 0;
+        }
+        const conductivity = (1 / resistance) * 1000000;
         return conductivity.toFixed(2);
     }
 
