@@ -3,6 +3,9 @@ require('regenerator-runtime/runtime');
 
 const BlockType = require('../../extension-support/block-type');
 
+const SensorDecoder = require('./utils/sensor-decoder');
+const sensorDecoder = new SensorDecoder();
+
 const Constants = require('./utils/constants');
 const filters = Constants.filters;
 
@@ -126,65 +129,56 @@ class Scratch3Kiwrious {
         if (!(sensorData && isHumiditySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        const humidity = sensorData[8] | (sensorData[9] << 8);
-        return humidity / 100;
+        return sensorDecoder.decodeHumidity(sensorData);
     }
 
     'Temperature (°C)' () {
         if (!(sensorData && isHumiditySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        const temperature = sensorData[6] | (sensorData[7] << 8);
-        return temperature / 100;
+        return sensorDecoder.decodeTemperature(sensorData);
     }
 
     'Resistance (Ω)' () {
         if (!(sensorData && isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return (sensorData[6] | (sensorData[7] << 8)) * (sensorData[8] | (sensorData[9] << 8));
+        return sensorDecoder.decodeResistance(sensorData);
     }
 
     'Conductance (μS)' () {
         if (!(sensorData && isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        const resistance = this['Resistance (Ω)']();
-        if (resistance === 0) {
-            return 0;
-        }
-        const conductivity = (1 / resistance) * 1000000;
-        return conductivity.toFixed(2);
+        return sensorDecoder.calculateConductance(this['Resistance (Ω)']());
     }
 
     Lux () {
         if (!(sensorData && isUvSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        const lux = new DataView(sensorData.buffer);
-        return lux.getFloat32(6, true).toFixed(0);
+        return sensorDecoder.decodeLux(sensorData);
     }
 
     UV () {
         if (!(sensorData && isUvSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        const uv = new DataView(sensorData.buffer);
-        return uv.getFloat32(10, true).toFixed(1);
+        return sensorDecoder.decodeUV(sensorData);
     }
 
     'tVOC (ppb)' () {
         if (!(sensorData && isVocSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorData[6] | (sensorData[7] << 8);
+        return sensorDecoder.decodeVOC(sensorData);
     }
 
     'CO2eq (ppm)' () {
         if (!(sensorData && isVocSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorData[8] | (sensorData[9] << 8);
+        return sensorDecoder.decodeCO2(sensorData);
     }
 
     _read (reader) {
