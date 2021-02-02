@@ -3,29 +3,24 @@ require('regenerator-runtime/runtime');
 
 const BlockType = require('../../extension-support/block-type');
 
+const ConnectivityHandler = require('./utils/connectivity-handler');
+
 const SensorDecoder = require('./utils/sensor-decoder');
 const sensorDecoder = new SensorDecoder();
 
 const Constants = require('./utils/constants');
 const filters = Constants.filters;
 
-let isRunning = false;
-let isConnected = false;
-
-let isHumiditySensorEnabled = false;
-let isConductivitySensorEnabled = false;
-let isUvSensorEnabled = false;
-let isVocSensorEnabled = false;
-
 let port;
 let sensorData;
 
 class Scratch3Kiwrious {
     constructor (runtime) {
+        this.connectivityHandler = new ConnectivityHandler();
         this.runtime = runtime;
 
         this.runtime.on('PROJECT_STOP_ALL', () => {
-            isRunning = false;
+            this.connectivityHandler.setIsRunning(false);
         });
         this._disconnectListener();
     }
@@ -91,11 +86,11 @@ class Scratch3Kiwrious {
             return;
         }
 
-        if (!isConnected) {
+        if (!this.connectivityHandler.getIsConnected()) {
             port = await navigator.serial.requestPort({filters});
             await port.open({baudRate: 230400});
 
-            isConnected = true;
+            this.connectivityHandler.setIsConnected(true);
         }
     }
 
@@ -105,14 +100,14 @@ class Scratch3Kiwrious {
             return;
         }
 
-        isRunning = true;
+        this.connectivityHandler.setIsRunning(true);
         const reader = port.readable.getReader();
 
         const rawData = await this._read(reader);
-        this._setSensorTypeFlags(rawData[2]);
+        this.connectivityHandler.setSensorTypeFlags(rawData[2]);
 
         try {
-            while (isRunning) {
+            while (this.connectivityHandler.getIsRunning()) {
                 const serialValue = await this._read(reader);
                 if (serialValue.length === Constants.KIWRIOUS_RX_LENGTH) {
                     sensorData = new Uint8Array(serialValue);
@@ -126,56 +121,56 @@ class Scratch3Kiwrious {
     }
 
     'Humidity (%)' () {
-        if (!(sensorData && isHumiditySensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsHumiditySensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeHumidity(sensorData);
     }
 
     'Temperature (°C)' () {
-        if (!(sensorData && isHumiditySensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsHumiditySensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeTemperature(sensorData);
     }
 
     'Resistance (Ω)' () {
-        if (!(sensorData && isConductivitySensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsConductivitySensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeResistance(sensorData);
     }
 
     'Conductance (μS)' () {
-        if (!(sensorData && isConductivitySensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsConductivitySensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.calculateConductance(this['Resistance (Ω)']());
     }
 
     Lux () {
-        if (!(sensorData && isUvSensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsUvSensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeLux(sensorData);
     }
 
     UV () {
-        if (!(sensorData && isUvSensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsUvSensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeUV(sensorData);
     }
 
     'tVOC (ppb)' () {
-        if (!(sensorData && isVocSensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsVocSensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeVOC(sensorData);
     }
 
     'CO2eq (ppm)' () {
-        if (!(sensorData && isVocSensorEnabled)) {
+        if (!(sensorData && this.connectivityHandler.getIsVocSensorEnabled())) {
             return Constants.NOT_CONNECTED;
         }
         return sensorDecoder.decodeCO2(sensorData);
@@ -197,30 +192,8 @@ class Scratch3Kiwrious {
     _disconnectListener () {
         if ('serial' in navigator) {
             navigator.serial.addEventListener('disconnect', () => {
-                isConnected = false;
-                isRunning = false;
-                isHumiditySensorEnabled = false;
-                isConductivitySensorEnabled = false;
-                isUvSensorEnabled = false;
-                isVocSensorEnabled = false;
+                this.connectivityHandler = new ConnectivityHandler();
             });
-        }
-    }
-
-    _setSensorTypeFlags (id) {
-        switch (id) {
-        case 1:
-            isUvSensorEnabled = true;
-            break;
-        case 4:
-            isConductivitySensorEnabled = true;
-            break;
-        case 6:
-            isVocSensorEnabled = true;
-            break;
-        case 7:
-            isHumiditySensorEnabled = true;
-            break;
         }
     }
 }
