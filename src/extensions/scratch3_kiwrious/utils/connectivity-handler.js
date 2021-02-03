@@ -26,35 +26,35 @@ class ConnectivityHandler {
         }
     }
 
-    setIsRunning (flag) {
+    set isRunning (flag) {
         this._isRunning = flag;
     }
 
-    setIsConnected (flag) {
+    set isConnected (flag) {
         this._isConnected = flag;
     }
 
-    getIsRunning () {
+    get isRunning () {
         return this._isRunning;
     }
 
-    getIsConnected () {
+    get isConnected () {
         return this._isConnected;
     }
 
-    getIsHumiditySensorEnabled () {
+    get isHumiditySensorEnabled () {
         return this._isHumiditySensorEnabled;
     }
 
-    getIsConductivitySensorEnabled () {
+    get isConductivitySensorEnabled () {
         return this._isConductivitySensorEnabled;
     }
 
-    getIsUvSensorEnabled () {
+    get isUvSensorEnabled () {
         return this._isUvSensorEnabled;
     }
 
-    getIsVocSensorEnabled () {
+    get isVocSensorEnabled () {
         return this._isVocSensorEnabled;
     }
 }
