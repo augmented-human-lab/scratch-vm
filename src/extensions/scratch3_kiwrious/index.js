@@ -17,6 +17,7 @@ class Scratch3Kiwrious {
 
         this.runtime.on('PROJECT_STOP_ALL', () => {
             this.connectivityHandler.isRunning = false;
+            this.connectivityHandler.isFreezeEnabled = false;
         });
         this._disconnectListener();
 
@@ -39,6 +40,14 @@ class Scratch3Kiwrious {
                 },
                 {
                     opcode: 'Read',
+                    blockType: BlockType.COMMAND
+                },
+                {
+                    opcode: 'Hold Reading',
+                    blockType: BlockType.COMMAND
+                },
+                {
+                    opcode: 'Release Reading',
                     blockType: BlockType.COMMAND
                 },
                 {
@@ -122,60 +131,59 @@ class Scratch3Kiwrious {
         await reader.cancel();
     }
 
-    'Humidity (%)' () {
-        if (!(this._sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
-            return Constants.NOT_CONNECTED;
+    'Hold Reading' () {
+        if (this.connectivityHandler.isRunning) {
+            this.connectivityHandler.isFreezeEnabled = true;
+        } else {
+            alert('Start Reading to Hold');
         }
-        return this.sensorDecoder.decodeHumidity(this._sensorData);
+    }
+
+    'Release Reading' () {
+        if (this.connectivityHandler.isRunning) {
+            this.connectivityHandler.isFreezeEnabled = false;
+        }
+    }
+
+    'Humidity (%)' () {
+        return this._dataHandler(this.connectivityHandler.isHumiditySensorEnabled,
+            this.sensorDecoder.decodeHumidity);
     }
 
     'Temperature (°C)' () {
-        if (!(this._sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeTemperature(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isHumiditySensorEnabled,
+            this.sensorDecoder.decodeTemperature);
     }
 
     'Resistance (Ω)' () {
-        if (!(this._sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeResistance(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isConductivitySensorEnabled,
+            this.sensorDecoder.decodeResistance);
     }
 
     'Conductance (μS)' () {
         if (!(this._sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return this.sensorDecoder.calculateConductance(this['Resistance (Ω)']());
+        if (this.connectivityHandler.isFreezeEnabled) return;
+        if (this.connectivityHandler.isRunning) {
+            return this.sensorDecoder.calculateConductance(this['Resistance (Ω)']());
+        }
     }
 
     Lux () {
-        if (!(this._sensorData && this.connectivityHandler.isUvSensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeLux(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isUvSensorEnabled, this.sensorDecoder.decodeLux);
     }
 
     UV () {
-        if (!(this._sensorData && this.connectivityHandler.isUvSensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeUV(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isUvSensorEnabled, this.sensorDecoder.decodeUV);
     }
 
     'tVOC (ppb)' () {
-        if (!(this._sensorData && this.connectivityHandler.isVocSensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeVOC(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isVocSensorEnabled, this.sensorDecoder.decodeVOC);
     }
 
     'CO2eq (ppm)' () {
-        if (!(this._sensorData && this.connectivityHandler.isVocSensorEnabled)) {
-            return Constants.NOT_CONNECTED;
-        }
-        return this.sensorDecoder.decodeCO2(this._sensorData);
+        return this._dataHandler(this.connectivityHandler.isVocSensorEnabled, this.sensorDecoder.decodeCO2);
     }
 
     _read (reader) {
@@ -189,6 +197,14 @@ class Scratch3Kiwrious {
         };
 
         return new Promise(serialPacket);
+    }
+
+    _dataHandler (isSensorConnected, decode) {
+        if (!(this._sensorData && isSensorConnected)) {
+            return Constants.NOT_CONNECTED;
+        }
+        if (this.connectivityHandler.isFreezeEnabled) return;
+        if (this.connectivityHandler.isRunning) return decode(this._sensorData);
     }
 
     _disconnectListener () {
