@@ -3,26 +3,25 @@ require('regenerator-runtime/runtime');
 
 const BlockType = require('../../extension-support/block-type');
 
-const ConnectivityHandler = require('./utils/connectivity-handler');
-
-const SensorDecoder = require('./utils/sensor-decoder');
-const sensorDecoder = new SensorDecoder();
-
 const Constants = require('./utils/constants');
-const filters = Constants.filters;
-
-let port;
-let sensorData;
+const ConnectivityHandler = require('./utils/connectivity-handler');
+const SensorDecoder = require('./utils/sensor-decoder');
 
 class Scratch3Kiwrious {
+
     constructor (runtime) {
         this.connectivityHandler = new ConnectivityHandler();
+        this.sensorDecoder = new SensorDecoder();
+
         this.runtime = runtime;
 
         this.runtime.on('PROJECT_STOP_ALL', () => {
             this.connectivityHandler.isRunning = false;
         });
         this._disconnectListener();
+
+        this._port = null;
+        this._sensorData = null;
     }
 
     getInfo () {
@@ -31,8 +30,8 @@ class Scratch3Kiwrious {
             name: Constants.EXTENSION_NAME,
             color1: Constants.KIWRIOUS_COLOUR,
             color2: Constants.KIWRIOUS_COLOUR,
-            blockIconURI: Constants.blockIconURI,
-            menuIconURI: Constants.menuIconURI,
+            blockIconURI: Constants.BLOCK_ICON_URI,
+            menuIconURI: Constants.MENU_ICON_URI,
             blocks: [
                 {
                     opcode: 'Connect',
@@ -82,26 +81,28 @@ class Scratch3Kiwrious {
 
     async Connect () {
         if (!('serial' in navigator)) {
+            // eslint-disable-next-line no-alert
             alert("This feature only works on Chrome with 'Experimental Web Platform features' enabled");
             return;
         }
 
         if (!this.connectivityHandler.isConnected) {
-            port = await navigator.serial.requestPort({filters});
-            await port.open({baudRate: 230400});
+            this._port = await navigator.serial.requestPort(Constants.FILTERS);
+            await this._port.open({baudRate: 230400});
 
-            this.connectivityHandler.IsConnected = true;
+            this.connectivityHandler.isConnected = true;
         }
     }
 
     async Read () {
-        if (!(port && port.readable)) {
+        if (!(this._port && this._port.readable)) {
+            // eslint-disable-next-line no-alert
             alert('Sensor setup failed');
             return;
         }
 
         this.connectivityHandler.isRunning = true;
-        const reader = port.readable.getReader();
+        const reader = this._port.readable.getReader();
 
         const rawData = await this._read(reader);
         this.connectivityHandler.setSensorTypeFlags(rawData[2]);
@@ -110,10 +111,11 @@ class Scratch3Kiwrious {
             while (this.connectivityHandler.isRunning) {
                 const serialValue = await this._read(reader);
                 if (serialValue.length === Constants.KIWRIOUS_RX_LENGTH) {
-                    sensorData = new Uint8Array(serialValue);
+                    this._sensorData = new Uint8Array(serialValue);
                 }
             }
         } catch (e) {
+            // eslint-disable-next-line no-console
             console.warn('Serial Read', e);
         }
 
@@ -121,59 +123,59 @@ class Scratch3Kiwrious {
     }
 
     'Humidity (%)' () {
-        if (!(sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeHumidity(sensorData);
+        return this.sensorDecoder.decodeHumidity(this._sensorData);
     }
 
     'Temperature (°C)' () {
-        if (!(sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isHumiditySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeTemperature(sensorData);
+        return this.sensorDecoder.decodeTemperature(this._sensorData);
     }
 
     'Resistance (Ω)' () {
-        if (!(sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeResistance(sensorData);
+        return this.sensorDecoder.decodeResistance(this._sensorData);
     }
 
     'Conductance (μS)' () {
-        if (!(sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.calculateConductance(this['Resistance (Ω)']());
+        return this.sensorDecoder.calculateConductance(this['Resistance (Ω)']());
     }
 
     Lux () {
-        if (!(sensorData && this.connectivityHandler.isUvSensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isUvSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeLux(sensorData);
+        return this.sensorDecoder.decodeLux(this._sensorData);
     }
 
     UV () {
-        if (!(sensorData && this.connectivityHandler.isUvSensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isUvSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeUV(sensorData);
+        return this.sensorDecoder.decodeUV(this._sensorData);
     }
 
     'tVOC (ppb)' () {
-        if (!(sensorData && this.connectivityHandler.isVocSensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isVocSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeVOC(sensorData);
+        return this.sensorDecoder.decodeVOC(this._sensorData);
     }
 
     'CO2eq (ppm)' () {
-        if (!(sensorData && this.connectivityHandler.isVocSensorEnabled)) {
+        if (!(this._sensorData && this.connectivityHandler.isVocSensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        return sensorDecoder.decodeCO2(sensorData);
+        return this.sensorDecoder.decodeCO2(this._sensorData);
     }
 
     _read (reader) {
