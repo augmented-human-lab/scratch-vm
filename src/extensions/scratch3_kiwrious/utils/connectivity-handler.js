@@ -3,6 +3,7 @@ class ConnectivityHandler {
     constructor () {
         this._isRunning = false;
         this._isConnected = false;
+        this._isFreezeEnabled = false;
         this._isHumiditySensorEnabled = false;
         this._isConductivitySensorEnabled = false;
         this._isUvSensorEnabled = false;
@@ -34,12 +35,20 @@ class ConnectivityHandler {
         this._isConnected = flag;
     }
 
+    set isFreezeEnabled (flag) {
+        this._isFreezeEnabled = flag;
+    }
+
     get isRunning () {
         return this._isRunning;
     }
 
     get isConnected () {
         return this._isConnected;
+    }
+
+    get isFreezeEnabled () {
+        return this._isFreezeEnabled;
     }
 
     get isHumiditySensorEnabled () {
