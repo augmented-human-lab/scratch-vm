@@ -103,7 +103,7 @@ class Scratch3Kiwrious {
         }
     }
 
-    async Read () {
+    async 'Read Forever' () {
         if (!(this._port && this._port.readable)) {
             // eslint-disable-next-line no-alert
             alert('Sensor setup failed');
@@ -131,7 +131,7 @@ class Scratch3Kiwrious {
         await reader.cancel();
     }
 
-    'Hold Reading' () {
+    'Freeze Reading' () {
         if (this.connectivityHandler.isRunning) {
             this.connectivityHandler.isFreezeEnabled = true;
         } else {
@@ -139,7 +139,7 @@ class Scratch3Kiwrious {
         }
     }
 
-    'Release Reading' () {
+    'Unfreeze Reading' () {
         if (this.connectivityHandler.isRunning) {
             this.connectivityHandler.isFreezeEnabled = false;
         }
