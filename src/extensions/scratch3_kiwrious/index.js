@@ -39,15 +39,15 @@ class Scratch3Kiwrious {
                     blockType: BlockType.COMMAND
                 },
                 {
-                    opcode: 'Read',
+                    opcode: 'Read Forever',
                     blockType: BlockType.COMMAND
                 },
                 {
-                    opcode: 'Hold Reading',
+                    opcode: 'Freeze Reading',
                     blockType: BlockType.COMMAND
                 },
                 {
-                    opcode: 'Release Reading',
+                    opcode: 'Unfreeze Reading',
                     blockType: BlockType.COMMAND
                 },
                 {
