@@ -97,7 +97,7 @@ class Scratch3Kiwrious {
 
         if (!this.connectivityHandler.isConnected) {
             this._port = await navigator.serial.requestPort(Constants.FILTERS);
-            await this._port.open({baudRate: 230400});
+            await this._port.open({baudRate: 115200});
 
             this.connectivityHandler.isConnected = true;
         }
@@ -204,9 +204,7 @@ class Scratch3Kiwrious {
         if (!(this._sensorData && isSensorConnected)) {
             return Constants.NOT_CONNECTED;
         }
-        if (this.connectivityHandler.isRunning) {
-            return decode(this._sensorData, this.connectivityHandler.isFreezeEnabled);
-        }
+        return decode(this._sensorData, this.connectivityHandler.isFreezeEnabled);
     }
 
     _disconnectListener () {
