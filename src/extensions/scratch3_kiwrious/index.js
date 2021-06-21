@@ -162,15 +162,12 @@ class Scratch3Kiwrious {
             this.sensorDecoder.decodeResistance);
     }
 
-    // TODO: remove redundancy
     'Conductance (μS)' () {
         if (!(this._sensorData && this.connectivityHandler.isConductivitySensorEnabled)) {
             return Constants.NOT_CONNECTED;
         }
-        if (this.connectivityHandler.isRunning) {
-            return this.sensorDecoder.calculateConductance(this['Resistance (Ω)'](),
-                this.connectivityHandler.isFreezeEnabled);
-        }
+        return this.sensorDecoder.calculateConductance(this['Resistance (Ω)'](),
+            this.connectivityHandler.isFreezeEnabled);
     }
 
     Lux () {
