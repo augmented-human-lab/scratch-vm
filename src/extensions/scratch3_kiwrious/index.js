@@ -5,7 +5,7 @@ const BlockType = require('../../extension-support/block-type');
 
 const Constants = require('./utils/constants');
 const ConnectivityHandler = require('./utils/connectivity-handler');
-const SerialReader = require('./utils/SerialReader');
+const SerialReader = require('./utils/serial-reader');
 const SensorDecoder = require('./utils/sensor-decoder');
 
 class Scratch3Kiwrious {
