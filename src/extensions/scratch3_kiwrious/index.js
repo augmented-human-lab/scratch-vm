@@ -5,6 +5,7 @@ const BlockType = require('../../extension-support/block-type');
 
 const Constants = require('./utils/constants');
 const ConnectivityHandler = require('./utils/connectivity-handler');
+const SerialReader = require('./utils/SerialReader');
 const SensorDecoder = require('./utils/sensor-decoder');
 
 class Scratch3Kiwrious {
@@ -112,13 +113,14 @@ class Scratch3Kiwrious {
 
         this.connectivityHandler.isRunning = true;
         const reader = this._port.readable.getReader();
+        const serialReader = new SerialReader(reader);
 
-        const rawData = await this._read(reader);
+        const rawData = await serialReader.readOnce();
         this.connectivityHandler.setSensorTypeFlags(rawData[2]);
 
         try {
             while (this.connectivityHandler.isRunning) {
-                const serialValue = await this._read(reader);
+                const serialValue = await serialReader.readOnce();
                 if (serialValue.length === Constants.KIWRIOUS_RX_LENGTH) {
                     this._sensorData = new Uint8Array(serialValue);
                 }
@@ -185,19 +187,6 @@ class Scratch3Kiwrious {
 
     'CO2eq (ppm)' () {
         return this._dataHandler(this.connectivityHandler.isVocSensorEnabled, this.sensorDecoder.decodeCO2);
-    }
-
-    _read (reader) {
-        const serialPacket = async function (resolve) {
-            const {value, done} = await reader.read();
-            if (done) {
-                reader.releaseLock();
-                throw new Error('Read Terminated');
-            }
-            resolve(value);
-        };
-
-        return new Promise(serialPacket);
     }
 
     _dataHandler (isSensorConnected, decode) {
