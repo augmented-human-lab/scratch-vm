@@ -1,6 +1,8 @@
 const Cast = require('../util/cast.js');
 const MathUtil = require('../util/math-util.js');
 
+const Kiwrious = require('../extensions/scratch3_kiwrious/utils/constants.js');
+
 class Scratch3OperatorsBlocks {
     constructor (runtime) {
         /**
@@ -54,6 +56,10 @@ class Scratch3OperatorsBlocks {
     }
 
     lt (args) {
+        // natively return false for comparisons with the NOT CONNECTED state of Kiwrious extension
+        if (args.OPERAND1 === Kiwrious.NOT_CONNECTED || args.OPERAND2 === Kiwrious.NOT_CONNECTED) {
+            return false;
+        }
         return Cast.compare(args.OPERAND1, args.OPERAND2) < 0;
     }
 
@@ -62,6 +68,10 @@ class Scratch3OperatorsBlocks {
     }
 
     gt (args) {
+        // natively return false for comparisons with the NOT CONNECTED state of Kiwrious extension
+        if (args.OPERAND1 === Kiwrious.NOT_CONNECTED || args.OPERAND2 === Kiwrious.NOT_CONNECTED) {
+            return false;
+        }
         return Cast.compare(args.OPERAND1, args.OPERAND2) > 0;
     }
 
